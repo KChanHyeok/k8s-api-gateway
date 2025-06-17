@@ -1,6 +1,5 @@
 package com.welab.k8s_api_gateway.advice;
 
-
 import com.welab.k8s_api_gateway.advice.parameter.ParameterErrorDto;
 import com.welab.k8s_api_gateway.common.dto.ApiResponseDto;
 import com.welab.k8s_api_gateway.common.exception.BadParameter;
@@ -9,6 +8,7 @@ import com.welab.k8s_api_gateway.common.exception.NotFound;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -65,9 +65,15 @@ public class ApiCommonAdvice {
         return ApiResponseDto.createError("ParameterNotValid", errorMessage, fieldList);
     }
 
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler({InsufficientAuthenticationException.class})
+    public ApiResponseDto<String> handleInsufficientAuthenticationException(InsufficientAuthenticationException e) {
+        return ApiResponseDto.createError("Unauthenticated", "인증되지 않았습니다.");
+    }
+
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler({Exception.class})
-    public ApiResponseDto<String > handleException(Exception e) {
+    public ApiResponseDto<String> handleException(Exception e) {
         return ApiResponseDto.createError(
                 "ServerError",
                 "서버 에러입니다.");

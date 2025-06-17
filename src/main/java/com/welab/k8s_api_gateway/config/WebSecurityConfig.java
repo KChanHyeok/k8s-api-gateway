@@ -1,7 +1,7 @@
 package com.welab.k8s_api_gateway.config;
 
 import com.welab.k8s_api_gateway.security.exception.RestAccessDeniedHandler;
-import com.welab.k8s_api_gateway.security.exception.RestAutheniticationEntryPoint;
+import com.welab.k8s_api_gateway.security.exception.RestAuthenticationEntryPoint;
 import com.welab.k8s_api_gateway.security.filter.JwtAuthenticationFilter;
 import com.welab.k8s_api_gateway.security.jwt.JwtTokenValidator;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import java.util.List;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class WebSecurityConfig {
-    private final RestAutheniticationEntryPoint autheniticationEntryPoint;
+    private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
     private final JwtTokenValidator jwtTokenValidator;
 
@@ -33,21 +33,25 @@ public class WebSecurityConfig {
                 .cors(httpSecurityCorsConfigurer -> {
                     httpSecurityCorsConfigurer.configurationSource(corsConfigurationSource());
                 })
-                .csrf(AbstractHttpConfigurer:: disable)
+                .csrf(AbstractHttpConfigurer::disable)
                 .securityMatcher("/**")
-                .sessionManagement(sessionManagementConfigurer -> sessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(sessionManagementConfigurer ->
+                        sessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtTokenValidator),
-                        UsernamePasswordAuthenticationFilter.class)
+                        UsernamePasswordAuthenticationFilter.class
+                )
                 .exceptionHandling((exceptionConfig) ->
-                        exceptionConfig.authenticationEntryPoint(autheniticationEntryPoint)
+                        exceptionConfig
+                                .authenticationEntryPoint(authenticationEntryPoint)
                                 .accessDeniedHandler(accessDeniedHandler))
-                .authorizeHttpRequests(registry ->
-                                registry.requestMatchers("/api/user/v1/auth/**")
-                                .permitAll().anyRequest().authenticated()
-                        );
+                .authorizeHttpRequests(registry -> registry
+                        .requestMatchers("/api/user/v1/auth/**").permitAll()
+                        .anyRequest().authenticated()
+                );
+
         return http.build();
     }
 
@@ -56,8 +60,9 @@ public class WebSecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowCredentials(true);
+//        config.setAllowedOrigins(List.of("*"));
         config.setAllowedOriginPatterns(List.of("*"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE","PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("*"));
 
@@ -66,5 +71,4 @@ public class WebSecurityConfig {
 
         return source;
     }
-
 }
